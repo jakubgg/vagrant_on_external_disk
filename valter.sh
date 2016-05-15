@@ -41,10 +41,79 @@ showVersion () {
     exit 0;
 }
 
+showHelp () {
+
+    underline=`tput smul`
+    nounderline=`tput rmul`
+    bold=`tput bold`
+    normal=`tput sgr0`
+
+
+cat <<HEREDOC
+
+export VAGRANT_HOME=/Volumes/test/vagranthome
+
+VBoxManage setproperty machinefolder /Volumes/test/VMbase
+VBoxManage setproperty machinefolder default
+source .bash_profile
+
+VBoxManage registervm /Volumes/test/VMbase/eneco_default_1461587255287_80498/eneco_default_1461587255287_80498.vbox
+
+valter v$VERSION
+
+Usage:
+
+Arguments:
+
+HEREDOC
+
+    exit 0;
+}
+
+
 
 init ()
 {
     prepare_arguments $# $@;
+
+    if [[ -n $NEW_VAGRANT_HOME_FOLDER ]]
+    then
+        set_new_vagrant_environment;
+    fi
+
+    if [[ -n $NEW_VB_MACHINE_FOLDER ]]
+    then
+        change_current_vbox_machine_folder;
+    fi
+
+    if [[ $RESTORE_FLAG -eq 1 ]]
+    then
+        restore_to_defaults;
+    fi
+
+    exit 0;
+
+    # set_new_vagrant_environment;
+    # restore_to_defaults;
+    # check_shell;
+    # is_vagrant_env_in_profile;
+    # remove_vagrant_env_from_profile;
+    # add_vagrant_env_to_profile;
+    #change_current_vbox_machine_folder;
+}
+
+check_shell ()
+{
+    # check $shell var and grab the last part of it, that should be the name of
+    # default shell binary
+    local _CURRENT_SHELL=$(echo $SHELL | awk -F "/" '{print $NF}');
+    echo -e "$GREEN[INFO] Checking your shell. Detected: $YELLOW $_CURRENT_SHELL $CLEARCOLOR";
+
+    set_shell_profile $_CURRENT_SHELL;
+
+    echo -e "$GREEN[INFO] Your default shell configuration set to $YELLOW $SHELL_CONFIG $CLEARCOLOR";
+    # echo $SHELL_CONFIG;
+}
 }
 
 # require_parameter()
