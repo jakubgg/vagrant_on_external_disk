@@ -115,6 +115,125 @@ check_shell ()
     # echo $SHELL_CONFIG;
 }
 
+set_shell_profile ()
+{
+    case $1 in
+        ksh)
+            SHELL_CONFIG="$HOME/.zshrc";;
+        bash)
+        #this is apparently only for OSX - all other systtems use .bashrc
+            SHELL_CONFIG="$HOME/.bash_profile";;
+        zsh)
+            SHELL_CONFIG="$HOME/.kshrc";;
+        *)
+            echo "Great Scott! I don't know this shell.";;
+    esac
+}
+
+
+add_vagrant_env_to_profile ()
+{
+    if [ -n "$SHELL_CONFIG" ];
+        then
+            echo -e "$GREEN[INFO] Checking your shell configuration files.$CLEARCOLOR";
+
+            if [[ $(check_if_profile_exist $SHELL_CONFIG) == "true" ]];
+                then
+                    echo -e "$GREEN[INFO] Adding 'VAGRANT_HOME' into your shell configuration.$CLEARCOLOR";
+
+                    if [ $DRYRUN_MODE -eq 1 ];
+                    then
+                        echo -e "$YELLOW[DEBUG] Echoing 'export VAGRANT_HOME=$NEW_VAGRANT_HOME_FOLDER' to your '$SHELL_CONFIG'.$CLEARCOLOR";
+                    else
+                        # WARNING! Next line is potentialy destructible!
+                        if VGH_EXP_RESULT=$(echo "export VAGRANT_HOME=\"$NEW_VAGRANT_HOME_FOLDER\"" >> $SHELL_CONFIG);
+                        then
+                            echo -e "$GREEN[INFO] Added $YELLOW 'export VAGRANT_HOME=$NEW_VAGRANT_HOME_FOLDER'$GREEN to your$YELLOW '$SHELL_CONFIG'.$CLEARCOLOR";
+                        else
+                            echo -e "$RED[ERROR] Problem adding VAGRANT_HOME $VGH_EXP_RESULT.$CLEARCOLOR";
+                        fi
+                    fi
+
+            elif [[ $(check_if_profile_exist $SHELL_CONFIG) == "false" ]] && [[ $CREATE_FLAG -eq 1 ]];
+                then
+
+                    echo -e "$GREEN[INFO] Shell configuration file not found.$CLEARCOLOR";
+                    echo -e "$GREEN[INFO] Using 'CREATE' configuration mode.$CLEARCOLOR";
+
+                    if [ $DRYRUN_MODE -eq 1 ];
+                    then
+                        echo -e "$YELLOW[DEBUG] Touching your config file: '$SHELL_CONFIG'.$CLEARCOLOR";
+                    else
+                        # create shell config file
+                        touch $SHELL_CONFIG;
+                    fi
+
+                    if [[ $(check_if_profile_exist $SHELL_CONFIG) == "true" ]];
+                    then
+                        echo -e "$GREEN[INFO] Shell configuration file has been created.$CLEARCOLOR";
+                    else
+                        echo -e "$RED[ERROR] Cannot create shell profile. Please create it manually.$CLEARCOLOR";
+                        exit 1;
+                    fi
+                    # invoke self to go through adding VAGRANT_HOME routine again.
+                    add_vagrant_env_to_profile $SHELL_CONFIG;
+
+                else
+                    echo -e "$RED[ERROR] Your shell configuration file does not exists. Try running the script with -C flag, or create it manually.$CLEARCOLOR";
+                    exit 1;
+            fi
+
+        else
+            echo -e "$RED[ERROR] Your shell path is not set. Cannot proceed.$CLEARCOLOR";
+            exit 1;
+    fi
+}
+
+is_vagrant_env_in_profile ()
+{
+    if [ -n "$SHELL_CONFIG" ];
+        then
+            if local TEST_RESULT=$(grep 'VAGRANT_HOME' $SHELL_CONFIG);
+            then
+                echo "true";
+            else
+                echo "false";
+            fi
+        else
+            echo -e "$RED[ERROR]Shell config not set.$CLEARCOLOR";
+            exit 1;
+    fi
+}
+
+remove_vagrant_env_from_profile ()
+{
+    if [ -n "$SHELL_CONFIG" ];
+        then
+            if VGH_RESULT=$(sed -i '' '/VAGRANT_HOME/d' $SHELL_CONFIG);
+            then
+                echo -e "$GREEN[INFO] Removed VAGRANT_HOME from your config file.$CLEARCOLOR";
+            else
+                echo -e "$RED[ERROR] Problem removing VAGRANT_HOME $VGH_RESULT.$CLEARCOLOR";
+            fi
+
+        else
+            echo "Shell config not set";
+    fi
+}
+
+##
+# Check if given shell profile (path to it) is a file
+##
+check_if_profile_exist ()
+{
+    if [ -f "$1" ];
+    then
+        echo "true";
+    else
+        echo "false";
+    fi
+}
+
 change_current_vbox_machine_folder ()
 {
 #TODO: add dry run mode to it!!!
@@ -153,6 +272,38 @@ check_os ()
     #todo add checking uname &/or lsb_release -a
     echo $(uname -s);
 }
+
+restore_to_defaults ()
+{
+    #TODO: add dry run mode to it!!!
+    NEW_VB_MACHINE_FOLDER="default";
+
+    check_shell;
+    remove_vagrant_env_from_profile;
+    change_current_vbox_machine_folder;
+
+}
+
+set_new_vagrant_environment ()
+{
+    check_shell;
+
+    if [[ $(is_vagrant_env_in_profile) == 'true' ]];
+    then
+        echo -e "$YELLOW[WARNING] There is already a VAGRANT_HOME in your profile.$CLEARCOLOR";
+        if [ $FORCE_FLAG -eq 1 ];
+        then
+            echo -e "$YELLOW[WARNING] Force mode turned on.$CLEARCOLOR";
+            remove_vagrant_env_from_profile;
+        else
+            echo -e "$YELLOW[WARNING] Please use -F flag to force overwriting.$CLEARCOLOR";
+            exit 1;
+        fi
+    fi
+
+    add_vagrant_env_to_profile;
+
+    # [[ ! $(source $SHELL_CONFIG) ]] && { echo "Error sourcing"; exit 1; } || echo "Re-loaded shell profile";
 }
 
 # require_parameter()
