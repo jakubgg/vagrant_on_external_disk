@@ -76,6 +76,16 @@ init ()
 {
     prepare_arguments $# $@;
 
+    if [ $DRYRUN_MODE -eq 1 ];
+    then
+        echo -e "$YELLOW[DEBUG] NEW_VAGRANT_HOME_FOLDER=$NEW_VAGRANT_HOME_FOLDER $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] NEW_VB_MACHINE_FOLDER=$NEW_VB_MACHINE_FOLDER $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] DRYRUN_MODE=$DRYRUN_MODE $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] CREATE_FLAG=$CREATE_FLAG $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] FORCE_FLAG=$FORCE_FLAG $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] RESTORE_FLAG=$RESTORE_FLAG $CLEARCOLOR";
+    fi
+
     if [[ -n $NEW_VAGRANT_HOME_FOLDER ]]
     then
         set_new_vagrant_environment;
@@ -143,7 +153,7 @@ add_vagrant_env_to_profile ()
 
                     if [ $DRYRUN_MODE -eq 1 ];
                     then
-                        echo -e "$YELLOW[DEBUG] Echoing 'export VAGRANT_HOME=$NEW_VAGRANT_HOME_FOLDER' to your '$SHELL_CONFIG'.$CLEARCOLOR";
+                        echo -e "$YELLOW[DEBUG] Pretending to 'export VAGRANT_HOME=$NEW_VAGRANT_HOME_FOLDER' to your '$SHELL_CONFIG'.$CLEARCOLOR";
                     else
                         # WARNING! Next line is potentialy destructible!
                         if VGH_EXP_RESULT=$(echo "export VAGRANT_HOME=\"$NEW_VAGRANT_HOME_FOLDER\"" >> $SHELL_CONFIG);
@@ -209,11 +219,17 @@ remove_vagrant_env_from_profile ()
 {
     if [ -n "$SHELL_CONFIG" ];
         then
-            if VGH_RESULT=$(sed -i '' '/VAGRANT_HOME/d' $SHELL_CONFIG);
+
+            if [ $DRYRUN_MODE -eq 1 ];
             then
-                echo -e "$GREEN[INFO] Removed VAGRANT_HOME from your config file.$CLEARCOLOR";
+                echo -e "$YELLOW[DEBUG] Pretending to remove VAGRANT_HOME from $SHELL_CONFIG . $CLEARCOLOR";
             else
-                echo -e "$RED[ERROR] Problem removing VAGRANT_HOME $VGH_RESULT.$CLEARCOLOR";
+                if VGH_RESULT=$(sed -i '' '/VAGRANT_HOME/d' $SHELL_CONFIG);
+                then
+                    echo -e "$GREEN[INFO] Removed VAGRANT_HOME from your config file.$CLEARCOLOR";
+                else
+                    echo -e "$RED[ERROR] Problem removing VAGRANT_HOME $VGH_RESULT.$CLEARCOLOR";
+                fi
             fi
 
         else
@@ -236,7 +252,6 @@ check_if_profile_exist ()
 
 change_current_vbox_machine_folder ()
 {
-#TODO: add dry run mode to it!!!
     #
     case $(check_os) in
         Darwin)
@@ -251,14 +266,19 @@ change_current_vbox_machine_folder ()
     echo -e "$GREEN[INFO] Your current VirtualBox VM folder is: $YELLOW \"$CURRENT_VBOX_MACHINE_FOLDER\".$CLEARCOLOR";
     echo -e "$GREEN[INFO] Changing it to: $YELLOW $NEW_VB_MACHINE_FOLDER.$CLEARCOLOR";
 
-    # VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER;
-    if VBM_RESULT=$(VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER);
+    if [ $DRYRUN_MODE -eq 1 ];
     then
-        echo -e "$GREEN[INFO] Default VirtualBox Machine folder has been changed.$CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] Pretending to change your VBox machinefolder. $CLEARCOLOR";
+        echo -e "$YELLOW[DEBUG] Your machine folder is: $(check_current_vbox_machine_folder $VM_CONF_PATH) $CLEARCOLOR";
     else
-        echo -e "$RED[ERROR] VBoxManage failed changing the folder with error: $VBM_RESULT.$CLEARCOLOR";
+        # VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER;
+        if VBM_RESULT=$(VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER);
+        then
+            echo -e "$GREEN[INFO] Default VirtualBox Machine folder has been changed.$CLEARCOLOR";
+        else
+            echo -e "$RED[ERROR] VBoxManage failed changing the folder with error: $VBM_RESULT.$CLEARCOLOR";
+        fi
     fi
-
 }
 
 check_current_vbox_machine_folder ()
