@@ -114,6 +114,45 @@ check_shell ()
     echo -e "$GREEN[INFO] Your default shell configuration set to $YELLOW $SHELL_CONFIG $CLEARCOLOR";
     # echo $SHELL_CONFIG;
 }
+
+change_current_vbox_machine_folder ()
+{
+#TODO: add dry run mode to it!!!
+    #
+    case $(check_os) in
+        Darwin)
+            echo -e "$GREEN[INFO] OSX detected.$CLEARCOLOR";
+            VM_CONF_PATH="$HOME/Li*/Virt*/VirtualBox.xml";
+            CURRENT_VBOX_MACHINE_FOLDER=$(check_current_vbox_machine_folder $VM_CONF_PATH);;
+        *)
+            echo -e "$GREEN[INFO] Other system detected.$CLEARCOLOR";
+            exit 1;;
+    esac
+
+    echo -e "$GREEN[INFO] Your current VirtualBox VM folder is: $YELLOW \"$CURRENT_VBOX_MACHINE_FOLDER\".$CLEARCOLOR";
+    echo -e "$GREEN[INFO] Changing it to: $YELLOW $NEW_VB_MACHINE_FOLDER.$CLEARCOLOR";
+
+    # VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER;
+    if VBM_RESULT=$(VBoxManage setproperty machinefolder $NEW_VB_MACHINE_FOLDER);
+    then
+        echo -e "$GREEN[INFO] Default VirtualBox Machine folder has been changed.$CLEARCOLOR";
+    else
+        echo -e "$RED[ERROR] VBoxManage failed changing the folder with error: $VBM_RESULT.$CLEARCOLOR";
+    fi
+
+}
+
+check_current_vbox_machine_folder ()
+{
+    echo $(grep -o -E 'defaultMachineFolder=\".*?\" ' $1 | awk -F= '{print $2}' | sed 's/"//g');
+}
+
+
+check_os ()
+{
+    #todo add checking uname &/or lsb_release -a
+    echo $(uname -s);
+}
 }
 
 # require_parameter()
