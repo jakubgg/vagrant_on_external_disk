@@ -43,30 +43,63 @@ showVersion () {
 
 showHelp () {
 
-    underline=`tput smul`
-    nounderline=`tput rmul`
-    bold=`tput bold`
-    normal=`tput sgr0`
+    local _underline=`tput smul`
+    local _nounderline=`tput rmul`
+    local _bold=`tput bold`
+    local _normal=`tput sgr0`
 
-
-cat <<HEREDOC
-
-export VAGRANT_HOME=/Volumes/test/vagranthome
-
-VBoxManage setproperty machinefolder /Volumes/test/VMbase
-VBoxManage setproperty machinefolder default
-source .bash_profile
-
-VBoxManage registervm /Volumes/test/VMbase/eneco_default_1461587255287_80498/eneco_default_1461587255287_80498.vbox
+echo -e "
 
 valter v$VERSION
 
-Usage:
+${_bold}Usage:${_normal}
+./valter.sh [--vagrant-env ${_underline}\"/path/to/folder/\"${_normal}] [--vbox-path ${_underline}\"/path/to/folder/\"${_normal}] {--dry-run|--force|--create|--restore|--version|--help}
 
-Arguments:
+${_bold}Arguments:${_normal}
+${_bold}-b|--vbox-path${_normal} ${_underline}\"/path/to/folder/\"${_normal}
+    Path to the directory where Virtual Box will keep Vagrant hdd images.
+    By defult it is \"\$HOME/VirtualBox VMs/\". You can also give 'default'
+    as a value to restore to default settings.
 
-HEREDOC
+    ${_bold}Example:${_normal}
+        ./valter.sh --vbox-path /Volumes/USBdisk/
+        ./valter.sh --vbox-path \"/Volumes/external disk/\"
+        [quotes are necessary if there are spaces in path]
+        ./valter.sh --vbox-path default
 
+${_bold}-g|--vagrant-env${_normal} ${_underline}"/path/to/folder/"${_normal}
+    Provides path for 'VAGRANT_HOME' environment variable. By default it is
+    your '\$HOME' directory.
+    VAGRANT_HOME can be set to change the directory where Vagrant stores global
+    state. By default, this is set to ~/.vagrant.d. The Vagrant home directory
+    is where things such as boxes are stored, so it can actually become quite
+    large on disk.
+
+    ${_bold}Example:${_normal}
+        ./valter.sh --vagrant-env /Volumes/USBdisk/
+        ./valter.sh --vagrant-env \"/Volumes/external disk/\"
+        [quotes are necessary if there are spaces in path]
+        ./valter.sh --vagrant-env \$HOME/
+
+${_bold}-d|--dry-run${_normal}    Run script in pretend mode. All possibly destructive actions
+                will only show debug messages. No actual changes are made.
+
+${_bold}-f|--force${_normal}      Force overwriting of VAGRANT_HOME environment variable. Without
+                that flag if VAGRANT_HOME is present in your shell config file,
+                script will abort.
+
+${_bold}-c|--create${_normal}     Create shell configuration file. For ZSH '.zshrc' will be
+                created, for Bash '.bash_profile' (for OSX) and '.bshrc' for
+                Linux, '.kshrc' will be created for Korn shell.
+
+${_bold}-r|--restore${_normal}    Shortcut to restore default settings, i.e. remove VAGRANT_HOME
+                from your shell configuration, and set Virtual Box machine
+                folder to 'defult'.
+
+${_bold}-v|--version${_normal}    Show version of valter script.
+
+${_bold}-h|--help${_normal}       Show this help.
+";
     exit 0;
 }
 
