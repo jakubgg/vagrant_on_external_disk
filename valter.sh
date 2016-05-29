@@ -1,30 +1,17 @@
 #!/usr/bin/env bash
 
-# 1 register vagrant environment +
-# check shell running - check for common shell conf files +
-
-# 2 register vbox hdd folder
-# 5 check non standard vbox hdd folders (?)
-
+# TODO
 # 3 add machines to vbox
 #    show list of machines available and machines that are not imported - show warning
 # 4 check UID with machine UID if different adjust creator_uid
 # 6 deregister vagrant environment
 #
 
-# Colours for messages
-RED="\x1b[31m"
-CYAN="\x1b[96m"
-GREEN="\x1b[32m"
-CLEARCOLOR="\x1b[0m"
-YELLOW="\x1b[33m"
+
 
 VERSION="0.1"
 
 # External parameters
-# NEW_VAGRANT_HOME_FOLDER="/Volumes/test/vagranthome";
-# NEW_VB_MACHINE_FOLDER="/Volumes/test/VMbase";
-
 NEW_VAGRANT_HOME_FOLDER="";
 NEW_VB_MACHINE_FOLDER="";
 
@@ -32,9 +19,14 @@ DRYRUN_MODE=0;
 CREATE_FLAG=0;
 FORCE_FLAG=0;
 RESTORE_FLAG=0;
+##
+# @param boolean NOCOLOR - 0 for colour (default), 1 for no colour.
+##
+NOCOLOR=0
 
 # Internal parameters
 VB_MACHINE_FOLDER_DEFAULT=0; #not used?
+
 
 showVersion () {
     echo "Vagrant on External Drive v$VERSION";
@@ -108,6 +100,7 @@ ${_bold}-h|--help${_normal}       Show this help.
 init ()
 {
     prepare_arguments $# $@;
+    set_colours;
 
     if [ $DRYRUN_MODE -eq 1 ];
     then
@@ -380,6 +373,45 @@ require_parameter() {
   fi
 }
 
+##
+# @function set_colours()
+#   Prepare global colours variables by assigning CLI colour values to them
+#   or empty for no colour (for file output).
+#
+#   Usage:
+#       set_colours <option> | set_colours
+#
+# @global RED
+# @global CYAN
+# @global GREEN
+# @global CLEARCOLOR
+# @global YELLOW
+# @global WHITE
+#
+# @param $1 optional boolean 1 for no colour, 0 for colour
+#
+# @return void
+##
+set_colours() {
+    # Prepare vars for color/non-color output
+    if [[ $NOCOLOR -eq 1 ]] || [[ $1 -eq 1 ]]
+    then
+        RED=""
+        CYAN=""
+        GREEN=""
+        CLEARCOLOR=""
+        YELLOW=""
+        WHITE=""
+    else
+        # Colours for messages
+        RED="\x1b[31m"
+        CYAN="\x1b[96m"
+        GREEN="\x1b[32m"
+        CLEARCOLOR="\x1b[0m"
+        YELLOW="\x1b[33m"
+        WHITE="\x1b[37m"
+    fi
+}
 
 prepare_arguments ()
 {
@@ -428,6 +460,9 @@ prepare_arguments ()
                 ;;
             -h|--help)
                 showHelp
+                ;;
+            -n|--no-color)
+                NOCOLOR=1
                 ;;
             -*)
                 echo "Unknown option: $1" >&2
